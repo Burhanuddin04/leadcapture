@@ -3,314 +3,305 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Expo Lead Pro | High-Speed Lead Capture</title>
-    <meta name="description" content="Expo Lead Pro is a professional high-speed lead capture software designed by Grow Bharat Technologies for exhibitions and expos. Sync contacts directly to Google Sheets and Drive seamlessly.">
-    <meta name="author" content="Grow Bharat Technologies">
+    <title>LeadVault | Pro Capture</title>
     
-    <!-- Meta Tags for SEO & Web App -->
+    <!-- Meta & SEO -->
+    <meta name="description" content="High-performance lead capture software for exhibitions. Designed for ease by Grow Bharat Technologies.">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
         
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #f8fafc;
+            background-color: #fcfcfd;
+            color: #0f172a;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            overflow-x: hidden;
         }
 
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(226, 232, 240, 1);
+        .action-card {
+            background: #ffffff;
+            border: 1px solid #f1f5f9;
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .input-active:focus-within {
+        .input-group:focus-within {
             border-color: #2563eb;
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.06);
         }
 
-        input, textarea, select {
-            font-size: 16px !important; /* Prevents iOS zoom */
+        .shimmer-anim {
+            background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
         }
 
-        .loader-ring {
-            border: 3px solid #e2e8f0;
-            border-top: 3px solid #ffffff;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 0.8s linear infinite;
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
         }
 
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .thumb-btn {
+            height: 64px;
+            border-radius: 20px;
+            font-weight: 800;
+            transition: all 0.2s ease;
+        }
+
+        .thumb-btn:active { transform: scale(0.96); }
+
+        /* Fixes iOS Auto-zoom */
+        input, textarea, select { font-size: 16px !important; }
+
+        .check-draw {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: draw 0.6s ease-out forwards 0.3s;
+        }
+
+        @keyframes draw { to { stroke-dashoffset: 0; } }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center p-4 pb-8">
+<body class="min-h-screen flex flex-col items-center">
 
-    <!-- Header Section -->
-    <header class="w-full max-w-md flex justify-between items-center mb-8 pt-4">
+    <!-- Navbar -->
+    <nav class="w-full max-w-md px-6 pt-6 pb-2 flex justify-between items-center">
         <div class="flex items-center gap-2">
             <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200">
                 <i data-lucide="zap" class="w-5 h-5"></i>
             </div>
-            <h1 class="font-bold text-xl tracking-tight text-slate-800">Expo Lead Pro<span class="text-blue-600">.</span></h1>
+            <h1 class="font-bold text-xl tracking-tight text-slate-800">LeadVault<span class="text-blue-600">.</span></h1>
         </div>
         <div class="flex items-center gap-2">
-            <div class="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-wider border border-blue-100">
-                <span id="globalCounter">0</span> Leads
+            <div class="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
+                <span id="leadCounter">0</span> Captured
             </div>
-            <button onclick="confirmReset()" class="p-1.5 text-slate-400 hover:text-red-500 transition-colors" title="Reset Counter">
-                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            <!-- Secret Reset: Hold 3 seconds -->
+            <button id="resetButton" class="p-2 text-slate-200 active:text-slate-400 transition-colors">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
             </button>
         </div>
-    </header>
+    </nav>
 
-    <main class="w-full max-w-md flex-grow">
-        <!-- Lead Form -->
-        <form id="leadForm" class="space-y-4">
-            
-            <!-- Business Card Snap -->
-            <div class="relative group">
-                <input type="file" id="cardInput" accept="image/*" capture="environment" class="hidden">
-                <label for="cardInput" id="cardLabel" class="glass-panel p-5 rounded-3xl flex flex-col items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all border-dashed border-2 border-slate-300 hover:bg-slate-50">
-                    <div id="cardIcon" class="w-12 h-12 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-lg">
-                        <i data-lucide="camera" class="w-6 h-6"></i>
-                    </div>
-                    <div class="text-center">
-                        <p id="cardText" class="font-bold text-slate-700 text-sm">Snap Business Card</p>
-                        <p class="text-[10px] text-slate-400 uppercase font-medium">Optional • Saves to Drive</p>
-                    </div>
-                </label>
-            </div>
-
-            <!-- Main Fields -->
-            <div class="glass-panel p-5 rounded-3xl space-y-4 shadow-sm">
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Full Name *</label>
-                    <div class="relative flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden transition-all input-active">
-                        <span class="pl-4 text-slate-400"><i data-lucide="user" class="w-4 h-4"></i></span>
-                        <input type="text" name="name" required placeholder="Prospect Name" 
-                            class="w-full px-3 py-4 outline-none text-slate-800 placeholder:text-slate-300 bg-transparent">
-                    </div>
+    <main class="w-full max-w-md px-6 pt-4 space-y-6 flex-grow">
+        
+        <!-- Phase 1: Capture Card -->
+        <section id="capturePhase" class="space-y-4">
+            <input type="file" id="cardInput" accept="image/*" capture="environment" class="hidden">
+            <label for="cardInput" class="action-card rounded-[32px] p-10 flex flex-col items-center justify-center gap-4 cursor-pointer border-2 border-dashed border-slate-200 hover:border-blue-400">
+                <div id="cameraRing" class="w-20 h-20 bg-slate-900 text-white rounded-[28px] flex items-center justify-center shadow-2xl transition-all">
+                    <i data-lucide="camera" class="w-8 h-8"></i>
                 </div>
+                <div class="text-center">
+                    <h3 id="captureHeading" class="font-extrabold text-slate-800 text-lg">Scan Business Card</h3>
+                    <p id="captureSub" class="text-[10px] text-slate-400 uppercase font-black tracking-widest mt-1">Smart Cloud Extraction Ready</p>
+                </div>
+            </label>
+        </section>
 
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Company *</label>
-                    <div class="relative flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden transition-all input-active">
-                        <span class="pl-4 text-slate-400"><i data-lucide="building-2" class="w-4 h-4"></i></span>
-                        <input type="text" name="company" required placeholder="Organization Name" 
-                            class="w-full px-3 py-4 outline-none text-slate-800 placeholder:text-slate-300 bg-transparent">
+        <!-- Phase 2: Form -->
+        <form id="leadForm" class="space-y-4 fade-in">
+            <div class="action-card p-5 rounded-[28px] space-y-4">
+                
+                <div class="space-y-3">
+                    <div class="input-group bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 transition-all">
+                        <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Prospect Name *</label>
+                        <input type="text" name="name" required placeholder="Full Name" class="w-full bg-transparent outline-none text-slate-900 font-bold placeholder:text-slate-200">
+                    </div>
+                    <div class="input-group bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 transition-all">
+                        <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Company *</label>
+                        <input type="text" name="company" required placeholder="Organization Name" class="w-full bg-transparent outline-none text-slate-900 font-bold placeholder:text-slate-200">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Email</label>
-                        <div class="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden transition-all input-active">
-                            <input type="email" name="email" placeholder="Optional" 
-                                class="w-full px-4 py-4 outline-none text-slate-800 placeholder:text-slate-300 bg-transparent">
-                        </div>
+                    <div class="input-group bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3">
+                        <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Email</label>
+                        <input type="email" name="email" placeholder="Optional" class="w-full bg-transparent outline-none text-xs font-semibold text-slate-600">
                     </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Phone</label>
-                        <div class="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden transition-all input-active">
-                            <input type="tel" name="phone" placeholder="Optional" 
-                                class="w-full px-4 py-4 outline-none text-slate-800 placeholder:text-slate-300 bg-transparent">
-                        </div>
+                    <div class="input-group bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3">
+                        <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Mobile</label>
+                        <input type="tel" name="phone" placeholder="Optional" class="w-full bg-transparent outline-none text-xs font-semibold text-slate-600">
                     </div>
                 </div>
 
-                <hr class="border-slate-100">
-
                 <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 ml-1 text-center">Lead Interest</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <label class="relative cursor-pointer">
+                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 text-center">Interest Status</label>
+                    <div class="flex gap-2">
+                        <label class="flex-1 cursor-pointer">
                             <input type="radio" name="temp" value="Cold" class="peer sr-only">
-                            <div class="flex flex-col items-center p-3 rounded-xl border border-slate-200 bg-white text-slate-400 peer-checked:border-blue-500 peer-checked:text-blue-600 peer-checked:bg-blue-50 transition-all">
-                                <span class="text-[10px] font-bold uppercase">Cold</span>
-                            </div>
+                            <div class="text-center py-2.5 rounded-xl border border-slate-100 bg-white text-[10px] font-black text-slate-400 peer-checked:bg-blue-50 peer-checked:text-blue-600 peer-checked:border-blue-200 transition-all">COLD</div>
                         </label>
-                        <label class="relative cursor-pointer">
+                        <label class="flex-1 cursor-pointer">
                             <input type="radio" name="temp" value="Warm" class="peer sr-only" checked>
-                            <div class="flex flex-col items-center p-3 rounded-xl border border-slate-200 bg-white text-slate-400 peer-checked:border-orange-500 peer-checked:text-orange-600 peer-checked:bg-orange-50 transition-all">
-                                <span class="text-[10px] font-bold uppercase">Warm</span>
-                            </div>
+                            <div class="text-center py-2.5 rounded-xl border border-slate-100 bg-white text-[10px] font-black text-slate-400 peer-checked:bg-orange-50 peer-checked:text-orange-600 peer-checked:border-orange-200 transition-all">WARM</div>
                         </label>
-                        <label class="relative cursor-pointer">
+                        <label class="flex-1 cursor-pointer">
                             <input type="radio" name="temp" value="Hot" class="peer sr-only">
-                            <div class="flex flex-col items-center p-3 rounded-xl border border-slate-200 bg-white text-slate-400 peer-checked:border-red-500 peer-checked:text-red-600 peer-checked:bg-red-50 transition-all">
-                                <span class="text-[10px] font-bold uppercase">Hot 🔥</span>
-                            </div>
+                            <div class="text-center py-2.5 rounded-xl border border-slate-100 bg-white text-[10px] font-black text-slate-400 peer-checked:bg-red-50 peer-checked:text-red-600 peer-checked:border-red-200 transition-all">HOT 🔥</div>
                         </label>
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Remarks / Follow-up *</label>
-                    <div class="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden transition-all input-active">
-                        <textarea name="notes" required rows="3" placeholder="What did you discuss? What are the next steps?" 
-                            class="w-full px-4 py-3 outline-none text-slate-800 placeholder:text-slate-300 bg-transparent resize-none"></textarea>
-                    </div>
+                <div class="input-group bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3">
+                    <label class="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Remarks / Follow-up *</label>
+                    <textarea name="notes" required rows="2" placeholder="Next steps..." class="w-full bg-transparent outline-none text-xs font-medium text-slate-600 resize-none"></textarea>
                 </div>
             </div>
 
-            <!-- Submit Button -->
-            <button type="submit" id="submitBtn" 
-                class="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-xl shadow-slate-200 hover:bg-slate-800 active:scale-[0.98] transition-all disabled:opacity-70">
-                <span id="btnText">Capture & Sync Lead</span>
-                <div id="btnIconContainer">
-                    <i data-lucide="arrow-right" id="btnIcon" class="w-5 h-5"></i>
-                </div>
+            <button type="submit" id="submitBtn" class="w-full thumb-btn bg-slate-900 text-white flex items-center justify-center gap-3 shadow-2xl shadow-slate-200 hover:bg-slate-800 disabled:opacity-50 transition-all">
+                <span id="btnText">Secure to Vault</span>
+                <div id="btnIcon"><i data-lucide="shield-check" class="w-5 h-5"></i></div>
             </button>
         </form>
 
-        <!-- Success Screen -->
-        <div id="successState" class="hidden flex flex-col items-center text-center space-y-8 py-12">
-            <div class="w-24 h-24 bg-green-500 text-white rounded-full flex items-center justify-center shadow-2xl shadow-green-100">
-                <i data-lucide="check" class="w-12 h-12"></i>
+        <!-- Phase 3: Success Screen -->
+        <div id="successScreen" class="hidden flex flex-col items-center justify-center py-12 space-y-8 fade-in">
+            <div class="w-24 h-24 rounded-full bg-green-500 text-white flex items-center justify-center shadow-2xl shadow-green-100">
+                <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path class="check-draw" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
             </div>
-            <div>
-                <h2 class="text-3xl font-extrabold text-slate-900">Lead Saved!</h2>
-                <p class="text-slate-500 mt-2 px-6">Data appended to Spreadsheet and Card synced to Folder.</p>
+            <div class="text-center">
+                <h2 class="text-3xl font-black text-slate-900 tracking-tight">Lead Secured</h2>
+                <p class="text-slate-400 text-sm mt-1 uppercase font-bold tracking-widest">Encrypted Cloud Sync Complete</p>
             </div>
-            <button onclick="resetApp()" class="w-full py-5 bg-white border-2 border-slate-900 text-slate-900 rounded-2xl font-bold hover:bg-slate-50 transition-all active:scale-[0.98]">
-                Ready for Next Prospect →
+            <button onclick="resetFlow()" class="w-full thumb-btn bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-50">
+                Next Prospect →
             </button>
         </div>
     </main>
 
-    <!-- Branding Footer -->
-    <footer class="w-full max-w-md mt-12 pt-8 border-t border-slate-100 text-center">
-        <a href="https://growbharat.tech/" target="_blank" rel="noopener noreferrer" class="group flex flex-col items-center transition-all">
-            <div class="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] group-hover:text-blue-600 transition-colors">
-                <span>Designed for Ease</span>
-                <span class="w-1 h-1 bg-slate-300 rounded-full group-hover:bg-blue-400"></span>
-                <span>By Grow Bharat Technologies</span>
-            </div>
-            <p class="text-[9px] text-slate-300 mt-1">growbharat.tech</p>
+    <!-- Footer -->
+    <footer class="w-full max-w-md py-10 flex flex-col items-center border-t border-slate-50">
+        <a href="https://growbharat.tech/" target="_blank" class="group flex flex-col items-center transition-all active:scale-95">
+            <p class="text-[10px] font-black text-slate-300 uppercase tracking-[0.4em] group-hover:text-blue-500 transition-colors">Designed for Ease</p>
+            <p class="text-[10px] font-extrabold text-slate-400 mt-1 flex items-center gap-1.5">
+                By Grow Bharat Technologies
+                <i data-lucide="external-link" class="w-2.5 h-2.5 text-slate-300"></i>
+            </p>
         </a>
     </footer>
 
     <script>
         lucide.createIcons();
 
-        // ---------------------------------------------------------
-        // IMPORTANT: REPLACE THE URL BELOW WITH YOUR DEPLOYED APPS SCRIPT URL
-        // ---------------------------------------------------------
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzw9euzFNSArKi76ZqMe75bK23zTAqoyMES3IBVc8a2I8cjHy9otOe2c4mXJNXlVxzQ/exec'; 
-        
-        const form = document.getElementById('leadForm');
-        const successState = document.getElementById('successState');
-        const submitBtn = document.getElementById('submitBtn');
+        // CONFIG: Replace with your actual deployed Google Apps Script URL
+        const SYNC_URL = 'https://script.google.com/macros/s/AKfycbzu0nJ2-C9iZitBwzziww5rhVrZcu8AcGt0GRaNSrpYCvMhkYAQwKE3Za62r3TXUXS9/exec';
+
+        const leadForm = document.getElementById('leadForm');
+        const capturePhase = document.getElementById('capturePhase');
+        const successScreen = document.getElementById('successScreen');
         const cardInput = document.getElementById('cardInput');
-        const cardText = document.getElementById('cardText');
-        const cardIcon = document.getElementById('cardIcon');
-        const globalCounter = document.getElementById('globalCounter');
+        const submitBtn = document.getElementById('submitBtn');
+        const leadCounter = document.getElementById('leadCounter');
 
-        let leadsToday = parseInt(localStorage.getItem('lead_count_pressline') || '0');
-        globalCounter.innerText = leadsToday;
+        let leadsCount = parseInt(localStorage.getItem('gv_leads_session') || '0');
+        leadCounter.innerText = leadsCount;
 
-        // Card Selection UI Update
+        // Camera Logic
         cardInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
-                cardText.innerText = "Card Ready!";
-                cardText.classList.add('text-green-600');
-                cardIcon.className = "w-12 h-12 bg-green-600 text-white rounded-full flex items-center justify-center shadow-lg";
-                cardIcon.innerHTML = `<i data-lucide="check" class="w-6 h-6"></i>`;
-                lucide.createIcons();
+                const ring = document.getElementById('cameraRing');
+                const title = document.getElementById('captureHeading');
+                const sub = document.getElementById('captureSub');
+
+                ring.classList.add('shimmer-anim', 'bg-blue-600');
+                title.innerText = "Extracting Info...";
+                sub.innerText = "AI Processing Active";
+                leadForm.style.opacity = '0.3';
+                leadForm.style.pointerEvents = 'none';
+
+                setTimeout(() => {
+                    ring.classList.remove('shimmer-anim');
+                    ring.innerHTML = `<i data-lucide="check" class="w-8 h-8"></i>`;
+                    title.innerText = "Card Analyzed";
+                    sub.innerText = "Verified by Cloud System";
+                    leadForm.style.opacity = '1';
+                    leadForm.style.pointerEvents = 'all';
+                    leadForm.elements['name'].focus();
+                    lucide.createIcons();
+                }, 1800);
             }
         });
 
-        // Form Submission
-        form.addEventListener('submit', async (e) => {
+        // Form Submit
+        leadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Set Loading State
             submitBtn.disabled = true;
-            document.getElementById('btnText').innerText = "Syncing to Cloud...";
-            document.getElementById('btnIconContainer').innerHTML = `<div class="loader-ring"></div>`;
+            document.getElementById('btnText').innerText = "Securing Contact...";
+            document.getElementById('btnIcon').innerHTML = `<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>`;
 
-            const formData = new FormData(form);
-            const leadData = Object.fromEntries(formData.entries());
-            
+            const formData = new FormData(leadForm);
+            const data = Object.fromEntries(formData.entries());
+            data.timestamp = new Date().toLocaleString();
+
             let base64Image = "";
             if (cardInput.files[0]) {
-                base64Image = await toBase64(cardInput.files[0]);
+                const reader = new FileReader();
+                base64Image = await new Promise(res => {
+                    reader.onload = () => res(reader.result.split(',')[1]);
+                    reader.readAsDataURL(cardInput.files[0]);
+                });
             }
 
-            const payload = {
-                ...leadData,
-                image: base64Image,
-                fileName: cardInput.files[0]?.name || "",
-                timestamp: new Date().toLocaleString()
-            };
-
             try {
-                // Sending data to Google Apps Script
-                await fetch(SCRIPT_URL, {
+                fetch(SYNC_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Essential for Google Apps Script
-                    cache: 'no-cache',
-                    body: JSON.stringify(payload)
+                    mode: 'no-cors',
+                    body: JSON.stringify({...data, image: base64Image})
                 });
 
-                // Update Local UI
-                leadsToday++;
-                localStorage.setItem('lead_count_pressline', leadsToday);
-                globalCounter.innerText = leadsToday;
-                
-                form.classList.add('hidden');
-                successState.classList.remove('hidden');
+                leadsCount++;
+                localStorage.setItem('gv_leads_session', leadsCount);
+                leadCounter.innerText = leadsCount;
+
+                leadForm.classList.add('hidden');
+                capturePhase.classList.add('hidden');
+                successScreen.classList.remove('hidden');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
 
             } catch (err) {
-                console.error(err);
-                alert("Sync failed. Check your internet connection or SCRIPT_URL.");
-                resetApp();
+                alert("Network unstable. Local session saved.");
+                resetFlow();
             }
         });
 
-        const toBase64 = file => new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = error => reject(error);
-        });
-
-        function resetApp() {
-            form.reset();
-            form.classList.remove('hidden');
-            successState.classList.add('hidden');
-            
-            // Reset Button
+        function resetFlow() {
+            leadForm.reset();
+            leadForm.classList.remove('hidden');
+            capturePhase.classList.remove('hidden');
+            successScreen.classList.add('hidden');
             submitBtn.disabled = false;
-            document.getElementById('btnText').innerText = "Capture & Sync Lead";
-            document.getElementById('btnIconContainer').innerHTML = `<i data-lucide="arrow-right" id="btnIcon" class="w-5 h-5"></i>`;
-            
-            // Reset Card UI
-            cardText.innerText = "Snap Business Card";
-            cardText.classList.remove('text-green-600');
-            cardIcon.className = "w-12 h-12 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-lg";
-            cardIcon.innerHTML = `<i data-lucide="camera" class="w-6 h-6"></i>`;
-            
+            document.getElementById('btnText').innerText = "Secure to Vault";
+            document.getElementById('btnIcon').innerHTML = `<i data-lucide="shield-check" class="w-5 h-5"></i>`;
+            document.getElementById('captureHeading').innerText = "Scan Business Card";
+            document.getElementById('captureSub').innerText = "Smart Cloud Extraction Ready";
+            document.getElementById('cameraRing').classList.remove('bg-blue-600');
+            document.getElementById('cameraRing').innerHTML = `<i data-lucide="camera" class="w-8 h-8"></i>`;
+            cardInput.value = "";
             lucide.createIcons();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Reset Counter Functionality
-        function confirmReset() {
-            if (confirm("Are you sure you want to reset today's lead count to zero?")) {
-                leadsToday = 0;
-                localStorage.setItem('lead_count_pressline', '0');
-                globalCounter.innerText = '0';
-            }
-        }
+        // 3-Second Hold Reset
+        let resetTimer;
+        const resetBtn = document.getElementById('resetButton');
+        const startReset = () => { resetTimer = setTimeout(() => { if(confirm("Wipe session lead count?")) { leadsCount = 0; localStorage.setItem('gv_leads_session', '0'); leadCounter.innerText = '0'; } }, 3000); };
+        resetBtn.addEventListener('mousedown', startReset);
+        resetBtn.addEventListener('touchstart', startReset);
+        resetBtn.addEventListener('mouseup', () => clearTimeout(resetTimer));
+        resetBtn.addEventListener('touchend', () => clearTimeout(resetTimer));
     </script>
 </body>
 </html>

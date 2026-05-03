@@ -3,7 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Expo Lead Pro | Pressline</title>
+    <title>Expo Lead Pro | High-Speed Lead Capture</title>
+    <meta name="description" content="Expo Lead Pro is a professional high-speed lead capture software designed by Grow Bharat Technologies for exhibitions and expos. Sync contacts directly to Google Sheets and Drive seamlessly.">
+    <meta name="author" content="Grow Bharat Technologies">
+    
+    <!-- Meta Tags for SEO & Web App -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -53,8 +60,13 @@
             </div>
             <h1 class="font-bold text-xl tracking-tight text-slate-800">Expo Lead Pro<span class="text-blue-600">.</span></h1>
         </div>
-        <div class="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-wider border border-blue-100">
-            <span id="globalCounter">0</span> Leads
+        <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-wider border border-blue-100">
+                <span id="globalCounter">0</span> Leads
+            </div>
+            <button onclick="confirmReset()" class="p-1.5 text-slate-400 hover:text-red-500 transition-colors" title="Reset Counter">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
         </div>
     </header>
 
@@ -175,18 +187,22 @@
 
     <!-- Branding Footer -->
     <footer class="w-full max-w-md mt-12 pt-8 border-t border-slate-100 text-center">
-        <h2 class="text-xl font-black text-slate-900 tracking-tighter uppercase mb-1">Pressline</h2>
-        <div class="flex items-center justify-center gap-2 text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em]">
-            <span>Designed for Ease</span>
-            <span class="w-1 h-1 bg-slate-200 rounded-full"></span>
-            <span>By Grow Bharat Technologies</span>
-        </div>
+        <a href="https://growbharat.tech/" target="_blank" rel="noopener noreferrer" class="group flex flex-col items-center transition-all">
+            <div class="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] group-hover:text-blue-600 transition-colors">
+                <span>Designed for Ease</span>
+                <span class="w-1 h-1 bg-slate-300 rounded-full group-hover:bg-blue-400"></span>
+                <span>By Grow Bharat Technologies</span>
+            </div>
+            <p class="text-[9px] text-slate-300 mt-1">growbharat.tech</p>
+        </a>
     </footer>
 
     <script>
         lucide.createIcons();
 
-        // Constants
+        // ---------------------------------------------------------
+        // IMPORTANT: REPLACE THE URL BELOW WITH YOUR DEPLOYED APPS SCRIPT URL
+        // ---------------------------------------------------------
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzw9euzFNSArKi76ZqMe75bK23zTAqoyMES3IBVc8a2I8cjHy9otOe2c4mXJNXlVxzQ/exec'; 
         
         const form = document.getElementById('leadForm');
@@ -217,7 +233,7 @@
             
             // Set Loading State
             submitBtn.disabled = true;
-            document.getElementById('btnText').innerText = "Syncing Data...";
+            document.getElementById('btnText').innerText = "Syncing to Cloud...";
             document.getElementById('btnIconContainer').innerHTML = `<div class="loader-ring"></div>`;
 
             const formData = new FormData(form);
@@ -236,28 +252,26 @@
             };
 
             try {
-                // To connect real data, uncomment this fetch block:
-                /*
+                // Sending data to Google Apps Script
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
+                    mode: 'no-cors', // Essential for Google Apps Script
+                    cache: 'no-cache',
                     body: JSON.stringify(payload)
                 });
-                */
 
-                // Simulated Delay for UX
-                setTimeout(() => {
-                    leadsToday++;
-                    localStorage.setItem('lead_count_pressline', leadsToday);
-                    globalCounter.innerText = leadsToday;
-                    
-                    form.classList.add('hidden');
-                    successState.classList.remove('hidden');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }, 1200);
+                // Update Local UI
+                leadsToday++;
+                localStorage.setItem('lead_count_pressline', leadsToday);
+                globalCounter.innerText = leadsToday;
+                
+                form.classList.add('hidden');
+                successState.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
 
             } catch (err) {
-                alert("Sync failed. Check connection.");
+                console.error(err);
+                alert("Sync failed. Check your internet connection or SCRIPT_URL.");
                 resetApp();
             }
         });
@@ -287,6 +301,15 @@
             
             lucide.createIcons();
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Reset Counter Functionality
+        function confirmReset() {
+            if (confirm("Are you sure you want to reset today's lead count to zero?")) {
+                leadsToday = 0;
+                localStorage.setItem('lead_count_pressline', '0');
+                globalCounter.innerText = '0';
+            }
         }
     </script>
 </body>
